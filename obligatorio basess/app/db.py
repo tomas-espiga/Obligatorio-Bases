@@ -1,5 +1,3 @@
-# db.py - Helper de conexión a MySQL sin ORM
-
 import mysql.connector
 from mysql.connector import Error
 import config

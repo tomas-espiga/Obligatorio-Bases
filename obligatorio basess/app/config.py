@@ -1,4 +1,4 @@
-# config.py - Configuración de conexión a MySQL (usa tu base Obligatorio)
+# config.py - Configuración de conexión a MySQL
 
 import os
 

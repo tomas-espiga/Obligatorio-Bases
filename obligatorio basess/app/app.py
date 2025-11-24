@@ -1,13 +1,32 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, session
 from datetime import datetime, timedelta
 from db import query_all, query_one, execute
 
+
+# App Flask principal del obligatorio
 app = Flask(__name__)
+
+
+
+# Clave para sesiones (flash, login, etc.)
 app.secret_key = "cambia-esto-por-algo-seguro"
+
+
+@app.before_request
+def requerir_login():
+    #login obligatorio para todas las rutas
+    rutas_publicas = {"login", "static"}
+    if request.endpoint is None:
+        return
+    if request.endpoint in rutas_publicas:
+        return
+    if "user_email" not in session:
+        return redirect(url_for("login"))
 
 
 @app.route("/")
 def index():
+    # Datos básicos para mostrar en el inicio
     total_participantes = query_one("SELECT COUNT(*) AS c FROM participante")["c"]
     total_salas = query_one("SELECT COUNT(*) AS c FROM sala")["c"]
     total_reservas = query_one("SELECT COUNT(*) AS c FROM reserva")["c"]
@@ -19,7 +38,52 @@ def index():
     )
 
 
-# ------------ PARTICIPANTES ------------
+
+
+# LOGIN / LOGOUT
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    # Si ya está logueado, lo mando al inicio
+    if "user_email" in session:
+        return redirect(url_for("index"))
+
+    if request.method == "POST":
+        email = request.form.get("email")
+        password = request.form.get("password")
+
+        if not email or not password:
+            flash("Todos los campos son obligatorios", "error")
+            return redirect(url_for("login"))
+
+        # Buscamos el usuario en la tabla login
+        usuario = query_one(
+            "SELECT email, contraseña FROM login WHERE email = %s",
+            (email,),
+        )
+
+        if not usuario or usuario["contraseña"] != password:
+            flash("Email o contraseña incorrectos", "error")
+            return redirect(url_for("login"))
+
+        # Guardamos email en la sesión
+        session["user_email"] = usuario["email"]
+        flash("Sesión iniciada correctamente", "success")
+        return redirect(url_for("index"))
+
+    return render_template("login.html")
+
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    flash("Sesión cerrada", "success")
+    return redirect(url_for("login"))
+
+
+
+# PARTICIPANTES
+
 
 @app.route("/participantes")
 def participantes_list():
@@ -93,16 +157,19 @@ def participantes_eliminar(ci):
     return redirect(url_for("participantes_list"))
 
 
-# ------------ SALAS ------------
+# SALAS 
+
 
 @app.route("/salas")
 def salas_list():
+    # Join con edificio para mostrar dirección
     salas = query_all(
         "SELECT s.*, e.direccion FROM sala s "
         "JOIN edificio e ON s.edificio = e.nombre_edificio "
         "ORDER BY s.edificio, s.nombre_sala"
     )
     return render_template("salas_list.html", salas=salas)
+
 
 
 @app.route("/salas/nueva", methods=["GET", "POST"])
@@ -198,7 +265,9 @@ def salas_eliminar(edificio, nombre_sala):
     return redirect(url_for("salas_list"))
 
 
-# ------------ RESERVAS ------------
+
+
+# RESERVAS
 
 @app.route("/reservas")
 def reservas_list():
@@ -234,9 +303,7 @@ def reservas_nueva():
             flash("Fecha inválida", "error")
             return redirect(url_for("reservas_nueva"))
 
-        # ------------------------------------------------------------------
-        # 1. Obtener datos de la sala
-        # ------------------------------------------------------------------
+        # 1. Para obtener datos de la sala 
         sala = query_one(
             "SELECT capacidad, tipo_sala FROM sala "
             "WHERE nombre_sala=%s AND edificio=%s",
@@ -249,9 +316,7 @@ def reservas_nueva():
         capacidad_sala = sala["capacidad"]
         tipo_sala = sala["tipo_sala"]
 
-        # ------------------------------------------------------------------
-        # 2. Evitar doble reserva (misma sala + misma fecha + mismo turno)
-        # ------------------------------------------------------------------
+        # 2. Evitamos doble reserva misma sala + fecha + turno
         choque = query_one(
             "SELECT COUNT(*) AS c "
             "FROM reserva "
@@ -263,9 +328,8 @@ def reservas_nueva():
             flash("Ya existe una reserva en esa sala para ese día y turno", "error")
             return redirect(url_for("reservas_nueva"))
 
-        # ------------------------------------------------------------------
-        # 3. Procesar lista de participantes
-        # ------------------------------------------------------------------
+
+
         lista_ci = [c.strip() for c in ci_participantes.split(",") if c.strip()]
 
         if len(lista_ci) > capacidad_sala:
@@ -274,12 +338,12 @@ def reservas_nueva():
                 "error",
             )
             return redirect(url_for("reservas_nueva"))
+        
 
+        # Chequeamos lo de los 7 días
         fecha_inicio_ventana = fecha_obj - timedelta(days=6)
 
-        # ------------------------------------------------------------------
-        # 4. Validar reglas de negocio por cada participante
-        # ------------------------------------------------------------------
+        # 4. Las reglas por participante
         for ci in lista_ci:
             participante = query_one("SELECT ci FROM participante WHERE ci=%s", (ci,))
             if not participante:
@@ -296,17 +360,17 @@ def reservas_nueva():
 
             exonerado = False
             for fila in academico:
-                rol = fila["rol"]  # alumno / docente
-                tipo = fila["tipo"]  # grado / posgrado
+                rol = fila["rol"]       
+                tipo = fila["tipo"]     
 
+                # Docentes en salas de docentes y posgrados en salas de posgrad
                 if tipo_sala == "docente" and rol == "docente":
                     exonerado = True
                 if tipo_sala == "posgrado" and tipo == "posgrado":
                     exonerado = True
 
-            # ---- Límites si NO está exonerado ----
             if not exonerado:
-                # 2 horas por día = máximo 2 reservas por día
+                # Maxima de 2 reservas por día
                 reservas_dia = query_one(
                     "SELECT COUNT(*) AS c FROM reserva r "
                     "JOIN reserva_participante rp ON rp.id_reserva = r.id_reserva "
@@ -321,7 +385,7 @@ def reservas_nueva():
                     )
                     return redirect(url_for("reservas_nueva"))
 
-                # Max 3 reservas activas en 7 días
+                # Maxima de 3 reservas activas en la semana
                 activas_semana = query_one(
                     "SELECT COUNT(*) AS c FROM reserva r "
                     "JOIN reserva_participante rp ON rp.id_reserva = r.id_reserva "
@@ -337,9 +401,7 @@ def reservas_nueva():
                     )
                     return redirect(url_for("reservas_nueva"))
 
-        # ------------------------------------------------------------------
-        # 5. Crear reserva y asignar participantes
-        # ------------------------------------------------------------------
+        # 5. Crear reserva y asignar a los participantes
         try:
             id_reserva = execute(
                 "INSERT INTO reserva (nombre_sala, edificio, fecha, id_turno, estado) "
@@ -366,12 +428,12 @@ def reservas_nueva():
     return render_template("reservas_form.html", salas=salas, turnos=turnos)
 
 
-
 if __name__ == "__main__":
     app.run(debug=True)
 
 
-# ------------ SANCIONES ------------
+# SANCIONES
+
 
 @app.route("/sanciones")
 def sanciones_list():
@@ -383,6 +445,7 @@ def sanciones_list():
         "ORDER BY sp.fecha_inicio DESC"
     )
     return render_template("sanciones_list.html", sanciones=sanciones)
+
 
 
 @app.route("/sanciones/nueva", methods=["GET", "POST"])
@@ -401,7 +464,7 @@ def sanciones_nueva():
             return redirect(url_for("sanciones_nueva"))
 
         try:
-            # Validamos formato de fecha
+            # Validamos formato de fecha YYYY-MM-DD
             datetime.strptime(fecha_inicio, "%Y-%m-%d")
             datetime.strptime(fecha_fin, "%Y-%m-%d")
         except ValueError:
@@ -423,6 +486,7 @@ def sanciones_nueva():
     return render_template("sanciones_form.html", participantes=participantes)
 
 
+
 @app.route("/sanciones/<int:id_sancion>/eliminar", methods=["POST"])
 def sanciones_eliminar(id_sancion):
     try:
@@ -434,3 +498,4 @@ def sanciones_eliminar(id_sancion):
     except Exception as e:
         flash(f"No se pudo eliminar la sanción: {e}", "error")
     return redirect(url_for("sanciones_list"))
+

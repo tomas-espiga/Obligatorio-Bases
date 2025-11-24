@@ -1,5 +1,3 @@
--- schema.sql - Esquema de base de datos (tu script actual)
-
 CREATE DATABASE Obligatorio;
 
 USE Obligatorio;

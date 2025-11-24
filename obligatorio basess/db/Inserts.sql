@@ -1,5 +1,3 @@
--- sample_data.sql - Datos de ejemplo (tu script actual de inserts)
-
 USE Obligatorio;
 
 INSERT INTO facultad (nombre)
