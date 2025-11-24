@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>{{ 'Editar' if sala else 'Nueva' }} sala</h2>
+<form method="post">
+  {% if not sala %}
+  <label>Nombre sala:
+    <input type="text" name="nombre_sala" required>
+  </label><br>
+  <label>Edificio:
+    <select name="edificio" required>
+      <option value="">-- seleccionar --</option>
+      {% for e in edificios %}
+      <option value="{{ e.nombre_edificio }}">{{ e.nombre_edificio }}</option>
+      {% endfor %}
+    </select>
+  </label><br>
+  {% else %}
+  <p>Sala: {{ sala.nombre_sala }} ({{ sala.edificio }})</p>
+  {% endif %}
+  <label>Capacidad:
+    <input type="number" name="capacidad" value="{{ sala.capacidad if sala else '' }}" required>
+  </label><br>
+  <label>Tipo:
+    <select name="tipo_sala" required>
+      {% set tipo = sala.tipo_sala if sala else '' %}
+      <option value="libre" {{ 'selected' if tipo == 'libre' else '' }}>Libre</option>
+      <option value="posgrado" {{ 'selected' if tipo == 'posgrado' else '' }}>Posgrado</option>
+      <option value="docente" {{ 'selected' if tipo == 'docente' else '' }}>Docente</option>
+    </select>
+  </label><br>
+  <button type="submit">Guardar</button>
+</form>
+{% endblock %}

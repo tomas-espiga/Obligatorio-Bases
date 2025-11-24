@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>{{ 'Editar' if participante else 'Nuevo' }} participante</h2>
+<form method="post">
+  {% if not participante %}
+  <label>CI:
+    <input type="text" name="ci" required>
+  </label><br>
+  {% else %}
+  <p>CI: {{ participante.ci }}</p>
+  {% endif %}
+  <label>Nombre:
+    <input type="text" name="nombre" value="{{ participante.nombre if participante else '' }}" required>
+  </label><br>
+  <label>Apellido:
+    <input type="text" name="apellido" value="{{ participante.apellido if participante else '' }}" required>
+  </label><br>
+  <label>Email:
+    <input type="email" name="email" value="{{ participante.email if participante else '' }}" required>
+  </label><br>
+  <button type="submit">Guardar</button>
+</form>
+{% endblock %}

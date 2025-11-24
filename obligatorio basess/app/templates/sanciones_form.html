@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Nueva sanción</h2>
+
+<form method="post">
+  <label>Participante:
+    <select name="ci_participante" required>
+      <option value="">-- seleccionar --</option>
+      {% for p in participantes %}
+      <option value="{{ p.ci }}">{{ p.ci }} - {{ p.apellido }}, {{ p.nombre }}</option>
+      {% endfor %}
+    </select>
+  </label><br>
+
+  <label>Fecha inicio:
+    <input type="date" name="fecha_inicio" required>
+  </label><br>
+
+  <label>Fecha fin:
+    <input type="date" name="fecha_fin" required>
+  </label><br>
+
+  <button type="submit">Guardar</button>
+</form>
+{% endblock %}

@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Reservas de Salas - Obligatorio BD1</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header>
+  <h1>Reservas de Salas - UCU</h1>
+<nav>
+  <a href="{{ url_for('index') }}">Inicio</a>
+  <a href="{{ url_for('participantes_list') }}">Participantes</a>
+  <a href="{{ url_for('salas_list') }}">Salas</a>
+  <a href="{{ url_for('reservas_list') }}">Reservas</a>
+  <a href="{{ url_for('sanciones_list') }}">Sanciones</a>
+</nav>
+
+</header>
+
+<main>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <ul class="flashes">
+      {% for category, message in messages %}
+        <li class="{{ category }}">{{ message }}</li>
+      {% endfor %}
+      </ul>
+    {% endif %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</main>
+
+<footer>
+  <p>Base de Datos 1 - UCU</p>
+</footer>
+</body>
+</html>

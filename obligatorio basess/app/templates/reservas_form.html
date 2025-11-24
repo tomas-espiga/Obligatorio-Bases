@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Nueva reserva</h2>
+<form method="post">
+  <label>Sala:
+    <select name="nombre_sala" required>
+      <option value="">-- seleccionar --</option>
+      {% for s in salas %}
+      <option value="{{ s.nombre_sala }}">{{ s.edificio }} - {{ s.nombre_sala }}</option>
+      {% endfor %}
+    </select>
+  </label><br>
+  <label>Edificio:
+    <select name="edificio" required>
+      <option value="">-- seleccionar --</option>
+      {% for s in salas %}
+      <option value="{{ s.edificio }}">{{ s.edificio }}</option>
+      {% endfor %}
+    </select>
+  </label><br>
+  <label>Fecha:
+    <input type="date" name="fecha" required>
+  </label><br>
+  <label>Turno:
+    <select name="id_turno" required>
+      <option value="">-- seleccionar --</option>
+      {% for t in turnos %}
+      <option value="{{ t.id_turno }}">{{ t.hora_inicio }} - {{ t.hora_fin }}</option>
+      {% endfor %}
+    </select>
+  </label><br>
+  <label>CI participantes (separados por coma):
+    <input type="text" name="ci_participantes" placeholder="11111111, 22222222" required>
+  </label><br>
+  <button type="submit">Guardar</button>
+</form>
+{% endblock %}

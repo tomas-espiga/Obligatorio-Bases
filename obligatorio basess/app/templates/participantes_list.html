@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Participantes</h2>
+<p><a href="{{ url_for('participantes_nuevo') }}">+ Nuevo participante</a></p>
+<table>
+  <tr>
+    <th>CI</th>
+    <th>Nombre</th>
+    <th>Apellido</th>
+    <th>Email</th>
+    <th>Acciones</th>
+  </tr>
+  {% for p in participantes %}
+  <tr>
+    <td>{{ p.ci }}</td>
+    <td>{{ p.nombre }}</td>
+    <td>{{ p.apellido }}</td>
+    <td>{{ p.email }}</td>
+    <td>
+      <a href="{{ url_for('participantes_editar', ci=p.ci) }}">Editar</a>
+      <form action="{{ url_for('participantes_eliminar', ci=p.ci) }}" method="post" style="display:inline" onsubmit="return confirm('¿Eliminar participante?');">
+        <button type="submit">Eliminar</button>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}
