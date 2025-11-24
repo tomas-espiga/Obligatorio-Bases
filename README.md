@@ -108,20 +108,3 @@ Verificar límite de 3 reservas activas por semana.
 Crear y eliminar sanciones.
 
 
-10. Estructura del proyecto
-obligatorio_salas_app/
-│
-├── app/
-│   ├── app.py
-│   ├── db.py
-│   ├── templates/
-│   ├── static/
-│   └── config.py
-│
-├── db/
-│   ├── schema.sql
-│   └── sample_data.sql
-│
-├── Dockerfile
-├── docker-compose.yml
-└── README.md
